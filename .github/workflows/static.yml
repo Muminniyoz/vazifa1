@@ -1,4 +1,4 @@
-name: Notify Telegram on Master Push
+name: Deploy to FTP
 
 on:
   push:
@@ -6,21 +6,34 @@ on:
       - master
 
 jobs:
-  notify:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Send notification to Telegram
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload files to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./ # Repozitoriy ildizidagi barcha fayllarni yuklash
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          exclude: |
+            **/.git*
+            **/.github*
+            **/README.md
+            **/.gitignore
+      - name: Send Telegram Notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MESSAGE="✅ *Yangi o'zgarishlar master branchga yuklandi!*\n\n"
+          MESSAGE="🚀 *FTP yuklandi!* ✅\n\n"
           MESSAGE+="📌 Repository: [${{ github.repository }}](https://github.com/${{ github.repository }})\n"
           MESSAGE+="🔀 Branch: *${{ github.ref_name }}*\n"
-          MESSAGE+="👤 Yuborgan: *${{ github.actor }}*\n"
-          MESSAGE+="🔄 Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})\n"
-
-          # JSON formatiga o‘tkazish va yuborish
+          MESSAGE+="👤 Yuklagan: *${{ github.actor }}*\n"
           curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHAT_ID" \
             -d parse_mode="Markdown" \
