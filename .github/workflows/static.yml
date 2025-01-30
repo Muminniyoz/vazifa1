@@ -1,4 +1,4 @@
-name: Deploy to FTP
+name: Deploy to SFTP
 
 on:
   push:
@@ -12,26 +12,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Upload files to FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: Upload files via SFTP
+        uses: appleboy/scp-action@v0.1.4
         with:
-          server: ${{ secrets.FTP_HOST }}
+          host: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./  # Repozitoriy ildizidagi barcha fayllarni yuklaydi
-          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
-          exclude: |
-            **/.git*
-            **/.github*
-            **/README.md
-            **/.gitignore
+          port: 22
+          source: "./*"
+          target: ${{ secrets.FTP_REMOTE_DIR }}
 
       - name: Send Telegram Notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MESSAGE="🚀 *FTP yuklandi!* ✅\n\n"
+          MESSAGE="🚀 *SFTP yuklandi!* ✅\n\n"
           MESSAGE+="📌 Repository: [${{ github.repository }}](https://github.com/${{ github.repository }})\n"
           MESSAGE+="🔀 Branch: *${{ github.ref_name }}*\n"
           MESSAGE+="👤 Yuklagan: *${{ github.actor }}*\n"
